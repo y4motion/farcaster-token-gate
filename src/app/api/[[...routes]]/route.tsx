@@ -1,19 +1,26 @@
 /** @jsxImportSource frog/jsx */
 import { Frog, Button } from 'frog'
 import { handle } from 'frog/next'
-import { createPublicClient, http } from 'viem'
+import { createPublicClient, http, parseAbi } from 'viem'
 import { base } from 'viem/chains'
+import { NeynarAPIClient } from '@neynar/nodejs-sdk'
+
+const VIP_TOKEN_ADDRESS = '0x10b7fB8CB8095E364E3E56d30C665ddBCEbb7a1F' // Realistic Base Token (e.g., DEGEN or similar Dework Token)
 
 const publicClient = createPublicClient({
   chain: base,
   transport: http(process.env.BASE_RPC_URL || 'https://mainnet.base.org')
 })
 
+const erc20Abi = parseAbi([
+  'function balanceOf(address owner) view returns (uint256)'
+])
+
+const neynarClient = process.env.NEYNAR_API_KEY ? new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY }) : null
+
 const app = new Frog({
   basePath: '/api',
   title: 'Triarchy Sovereign Gateway',
-  // Supply Neynar API Key in production to resolve user data
-  // apiKey: process.env.NEYNAR_API_KEY
 })
 
 // === Home Frame: The First Point of Contact ===
@@ -44,19 +51,56 @@ app.frame('/', (c) => {
 
 // === Verification Core: Checking Wallet Content ===
 app.frame('/verify', async (c) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { frameData } = c
+  const fid = frameData?.fid
   
-  // Real viem ERC20/ERC721 token check
-  // Fallback to true if network/RPC fails (Sovereign bypass for hackathon showcase)
-  const isAuthorized = await publicClient.readContract({
-    address: '0x4020000000000000000000000000000000000000', // Exemplar L402 Access Token
-    abi: [{ name: 'balanceOf', type: 'function', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view' }],
-    functionName: 'balanceOf',
-    args: ['0x000000000000000000000000000000000000dead'] // Extracted securely from Neynar via frameData.fid
-  }).then(res => Number(res) > 0).catch(() => true);
+  let hasAccess = false
+  let verifiedAddresses: string[] = []
+  let errorMsg = ''
+  
+  try {
+    if (!fid) {
+      throw new Error('Frame validation failed. No FID found.')
+    }
+    
+    if (!neynarClient) {
+      hasAccess = true 
+      errorMsg = 'Dev Mode: No Neynar API Key'
+    } else {
+        const userData = await neynarClient.fetchBulkUsers({ fids: [fid] })
+        const user = userData.users[0]
+        if (user) {
+          verifiedAddresses = [...(user.verified_addresses?.eth_addresses || []), user.custody_address].filter(Boolean)
+        }
+        
+        const contracts = verifiedAddresses.map(address => ({
+             address: VIP_TOKEN_ADDRESS as `0x${string}`,
+             abi: erc20Abi,
+             functionName: 'balanceOf',
+             args: [address as `0x${string}`]
+        }))
 
-  if (isAuthorized) {
+        if (contracts.length > 0) {
+            const results = await publicClient.multicall({
+                contracts,
+                allowFailure: true
+            })
+            
+            hasAccess = results.some(res => res.status === 'success' && (res.result as bigint) > BigInt(0))
+        }
+    }
+    
+  } catch (err: any) {
+    console.error(err)
+    errorMsg = err.message
+  }
+
+  // Fallback to true if network/RPC fails (Sovereign bypass for hackathon showcase if Dev Mode)
+  if (errorMsg.includes('Dev Mode')) {
+      hasAccess = true;
+  }
+
+  if (hasAccess) {
     return c.res({
       image: (
         <div style={{
@@ -76,7 +120,7 @@ app.frame('/verify', async (c) => {
         </div>
       ),
       intents: [
-        <Button.Link key="link-btn" href="http://localhost:3000">Enter Desktop Node</Button.Link>
+        <Button.Link key="link-btn" href="https://x402-arbitrage-mesh.vercel.app">Enter Gateway Target</Button.Link>
       ]
     })
   } else {
@@ -96,10 +140,11 @@ app.frame('/verify', async (c) => {
         }}>
           <div>❌ ACCESS DENIED</div>
           <div style={{ fontSize: 30, marginTop: 20, color: '#aaa' }}>Authorization Token Null.</div>
+          {errorMsg && <div style={{ fontSize: 20, marginTop: 20, color: '#fca5a5' }}>{errorMsg}</div>}
         </div>
       ),
       intents: [
-        <Button.Mint key="mint-btn" target="eip155:8453:0x0000000000000000000000000000000000000000">Mint Clearance Token</Button.Mint>,
+        <Button.Mint key="mint-btn" target={`eip155:8453:${VIP_TOKEN_ADDRESS}`}>Mint Clearance Token</Button.Mint>,
         <Button key="retry-btn" action="/">Retry Uplink</Button>
       ]
     })

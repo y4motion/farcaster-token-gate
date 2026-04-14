@@ -5,9 +5,9 @@ export const metadata: Metadata = {
   description: 'A sovereign Farcaster Frame.',
   other: {
     'fc:frame': 'vNext',
-    'fc:frame:image': 'https://placehold.co/600x315/000000/FFFFFF?text=Triarchy+Gate',
+    'fc:frame:image': `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/og-image.png`,
     'fc:frame:button:1': 'Enter Gate',
-    'fc:frame:post_url': `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/enter`,
+    'fc:frame:post_url': `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api`,
   }
 }
 
