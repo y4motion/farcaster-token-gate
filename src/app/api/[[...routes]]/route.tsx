@@ -90,9 +90,10 @@ app.frame('/verify', async (c) => {
         }
     }
     
-  } catch (err: any) {
-    console.error(err)
-    errorMsg = err.message
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error(error)
+    errorMsg = error.message
   }
 
   // Fallback to true if network/RPC fails (Sovereign bypass for hackathon showcase if Dev Mode)

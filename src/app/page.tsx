@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: 'A sovereign Farcaster Frame.',
   other: {
     'fc:frame': 'vNext',
-    'fc:frame:image': `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/og-image.png`,
+    'fc:frame:image': 'https://placehold.co/1200x630/050505/00ff41?text=D2085:+THE+TOKEN+GATE',
     'fc:frame:button:1': 'Enter Gate',
     'fc:frame:post_url': `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api`,
   }
