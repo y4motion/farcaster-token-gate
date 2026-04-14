@@ -18,17 +18,22 @@ If you do not hold the required ERC-20 asset on-chain, you cannot see the Mesh.
 - **Viem Multicall Optimization**: Reads `balanceOf` across multiple connected custody addresses in a *single* `multicall` RPC request, vastly reducing latency and RPC strain.
 - **Seamless Mesh Handoff**: Upon cryptographic verification, the user is authorized and redirected straight into the Sovereign WebGL Mesh Dashboard.
 
-## Deployment Instruction (Vercel)
-This repository is optimized for Edge Networks. To deploy:
-1. Import this repository into Vercel.
-2. Set the Environment Variables:
-   - `NEYNAR_API_KEY`: Your Neynar API Key.
-   - `RPC_URL`: (Optional) Base/Mainnet RPC URL.
-   - `NEXT_PUBLIC_SITE_URL`: The production URL (e.g. `https://my-frame.vercel.app`).
-3. Deploy!
+## ⚙️ Sovereign Node Deployment (Vercel Edge)
+This gatekeeper is optimized for blazing-fast Edge Networks to ensure zero latency during the cryptographic handshake.
 
-## Frameworks
-- Next.js 14 App Router
-- Frog `0.15`
-- Viem
-- TailwindCSS
+1. **Deploy to Vercel** — One-click import.
+2. **Configure Security Parameters:**
+   - `NEYNAR_API_KEY`: Required for Farcaster FID resolution.
+   - `RPC_URL`: Base/Mainnet RPC for reading token balances.
+   - `NEXT_PUBLIC_SITE_URL`: The host URL of this frame.
+   - `NEXT_PUBLIC_MESH_DASHBOARD_URL`: The exact URL of your `x402 Arbitrage Mesh` dashboard. Authorized users are redirected here.
+
+## 🛠️ Architecture Stack
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Core** | Next.js 14 App Router | Edge computing and API routing |
+| **Farcaster** | Frog.fm 0.15 + Neynar SDK | Frame rendering and FID validation |
+| **On-Chain** | Viem | `multicall` optimized balance reads |
+
+---
+*Connected to the primary infrastructure:* [x402-arbitrage-mesh](https://github.com/Stellar-Agent-Labs/x402-arbitrage-mesh)
